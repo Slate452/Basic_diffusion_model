@@ -46,5 +46,5 @@ def run_Diff_model() :
                 print(f"Epoch {epoch} | step {step:03d} Loss: {loss.item()} ")
                 diff.sample_plot_image(model,device)
 
-run_Diff_model()
-
+#run_Diff_model()
+test_unet()

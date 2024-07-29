@@ -1,6 +1,56 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+import math
 
+class PositionalEncoding(nn.Module):
+    def __init__(
+            self,
+            embedding_dim: int,
+            dropout: float = 0.1,
+            max_len: int = 1000,
+            apply_dropout: bool = True,
+    ):
+        super(PositionalEncoding, self).__init__()
+        self.dropout = nn.Dropout(p=dropout)
+        self.apply_dropout = apply_dropout
+
+        pos_encoding = torch.zeros(max_len, embedding_dim)
+        position = torch.arange(start=0, end=max_len).unsqueeze(1)
+        div_term = torch.exp(-math.log(10000.0) * torch.arange(0, embedding_dim, 2).float() / embedding_dim)
+
+        pos_encoding[:, 0::2] = torch.sin(position * div_term)
+        pos_encoding[:, 1::2] = torch.cos(position * div_term)
+        self.register_buffer(name='pos_encoding', tensor=pos_encoding, persistent=False)
+
+    def forward(self, t: torch.LongTensor) -> torch.Tensor:
+        positional_encoding = self.pos_encoding[t].squeeze(1)
+        if self.apply_dropout:
+            return self.dropout(positional_encoding)
+        return positional_encoding
+    
+  
+class TransformerEncoderSA(nn.Module):
+    def __init__(self, num_channels: int, size: int, num_heads: int = 4):
+        super(TransformerEncoderSA, self).__init__()
+        self.num_channels = num_channels
+        self.size = size
+        self.mha = nn.MultiheadAttention(embed_dim=num_channels, num_heads=num_heads, batch_first=True)
+        self.ln = nn.LayerNorm([num_channels])
+        self.ff_self = nn.Sequential(
+            nn.LayerNorm([num_channels]),
+            nn.Linear(in_features=num_channels, out_features=num_channels),
+            nn.LayerNorm([num_channels]),
+            nn.Linear(in_features=num_channels, out_features=num_channels)
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = x.view(-1, self.num_channels, self.size * self.size).permute(0, 2, 1)
+        x_ln = self.ln(x)
+        attention_value, _ = self.mha(query=x_ln, key=x_ln, value=x_ln)
+        attention_value = attention_value + x
+        attention_value = self.ff_self(attention_value) + attention_value
+        return attention_value.permute(0, 2, 1).view(-1, self.num_channels, self.size, self.size)
 
 class conv_block(nn.Module):
     def __init__(self, in_channels, out_channels):
@@ -55,93 +105,24 @@ class decoder_block(nn.Module):
         x = self.conv(x)
 
         return x
-class PositionalEncoding(nn.Module):
-    def __init__(
-            self,
-            embedding_dim: int,
-            dropout: float = 0.1,
-            max_len: int = 1000,
-            apply_dropout: bool = True,
-    ):
-        """Section 3.5 of attention is all you need paper.
-
-        Extended slicing method is used to fill even and odd position of sin, cos with increment of 2.
-        Ex, `[sin, cos, sin, cos, sin, cos]` for `embedding_dim = 6`.
-
-        `max_len` is equivalent to number of noise steps or patches. `embedding_dim` must same as image
-        embedding dimension of the model.
-
-        Args:
-            embedding_dim: `d_model` in given positional encoding formula.
-            dropout: Dropout amount.
-            max_len: Number of embeddings to generate. Here, equivalent to total noise steps.
-        """
-        super(PositionalEncoding, self).__init__()
-        self.dropout = nn.Dropout(p=dropout)
-        self.apply_dropout = apply_dropout
-
-        pos_encoding = torch.zeros(max_len, embedding_dim)
-        position = torch.arange(start=0, end=max_len).unsqueeze(1)
-        div_term = torch.exp(-math.log(10000.0) * torch.arange(0, embedding_dim, 2).float() / embedding_dim)
-
-        pos_encoding[:, 0::2] = torch.sin(position * div_term)
-        pos_encoding[:, 1::2] = torch.cos(position * div_term)
-        self.register_buffer(name='pos_encoding', tensor=pos_encoding, persistent=False)
-
-    def forward(self, t: torch.LongTensor) -> torch.Tensor:
-        """Get precalculated positional embedding at timestep t. Outputs same as video implementation
-        code but embeddings are in [sin, cos, sin, cos] format instead of [sin, sin, cos, cos] in that code.
-        Also batch dimension is added to final output.
-        """
-        positional_encoding = self.pos_encoding[t].squeeze(1)
-        if self.apply_dropout:
-            return self.dropout(positional_encoding)
-        return positional_encoding
-
-class TransformerEncoderSA(nn.Module):
-    def __init__(self, num_channels: int, size: int, num_heads: int = 4):
-        """A block of transformer encoder with mutli head self attention from vision transformers paper,
-         https://arxiv.org/pdf/2010.11929.pdf.
-        """
-        super(TransformerEncoderSA, self).__init__()
-        self.num_channels = num_channels
-        self.size = size
-        self.mha = nn.MultiheadAttention(embed_dim=num_channels, num_heads=num_heads, batch_first=True)
-        self.ln = nn.LayerNorm([num_channels])
-        self.ff_self = nn.Sequential(
-            nn.LayerNorm([num_channels]),
-            nn.Linear(in_features=num_channels, out_features=num_channels),
-            nn.LayerNorm([num_channels]),
-            nn.Linear(in_features=num_channels, out_features=num_channels)
-        )
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Self attention.
-
-        Input feature map [4, 128, 32, 32], flattened to [4, 128, 32 x 32]. Which is reshaped to per pixel
-        feature map order, [4, 1024, 128].
-
-        Attention output is same shape as input feature map to multihead attention module which are added element wise.
-        Before returning attention output is converted back input feature map x shape. Opposite of feature map to
-        mha input is done which gives output [4, 128, 32, 32].
-        """
-        x = x.view(-1, self.num_channels, self.size * self.size).permute(0, 2, 1)
-        x_ln = self.ln(x)
-        attention_value, _ = self.mha(query=x_ln, key=x_ln, value=x_ln)
-        attention_value = attention_value + x
-        attention_value = self.ff_self(attention_value) + attention_value
-        return attention_value.permute(0, 2, 1).view(-1, self.num_channels, self.size, self.size)
-
 
 class build_unet(nn.Module):
-    def __init__(self):
+    def __init__(self,
+                noise_steps: int = 1000,
+                time_dim: int = 256,):
         super().__init__()
-
+        self.time_dim = time_dim
+        self.pos_encoding = PositionalEncoding(embedding_dim=time_dim, max_len=noise_steps)
+        
+        
         """ Encoder """
         self.e1 = encoder_blck(3, 64)
         self.e2 = encoder_blck(64, 128)
         self.e3 = encoder_blck(128, 256)
         self.e4 = encoder_blck(256, 512)
+        self.attn1 =TransformerEncoderSA(64, 64)
+        self.attn2 = TransformerEncoderSA(128, 32)
+        self.attn3 = TransformerEncoderSA(256, 16)
 
         """ Bottleneck """
         self.b = conv_block(512, 1024)
@@ -151,27 +132,40 @@ class build_unet(nn.Module):
         self.d2 = decoder_block(512, 256)
         self.d3 = decoder_block(256, 128)
         self.d4 = decoder_block(128, 64)
+        self.attnU1 =TransformerEncoderSA(256, 16)
+        self.attnU2 = TransformerEncoderSA(128, 32)
+        self.attnU3 = TransformerEncoderSA(64, 64)
+
 
         """ Classifier """
         self.outputs = nn.Conv2d(64, 3, kernel_size=1, padding=0)
 
-    def forward(self, inputs):
+    def forward(self, inputs,t: torch.LongTensor):
+        t = self.pos_encoding(t)
         """ Encoder """
         s1, p1 = self.e1(inputs)
+        s1= self.attn1(s1)
         s2, p2 = self.e2(p1)
+        s2= self.attn2(s2)
         s3, p3 = self.e3(p2)
+        s3= self.attn3(s3)
         s4, p4 = self.e4(p3)
+
 
         """ Bottleneck """
         b = self.b(p4)
-
+        print(b.shape)
         """ Decoder """
         d1 = self.d1(b, s4)
         d2 = self.d2(d1, s3)
+        d2 = self.attnU1(d2)
         d3 = self.d3(d2, s2)
+        d3 = self.attnU2(d3)
         d4 = self.d4(d3, s1)
+        d4 = self.attnU3(d4)
 
-        """ Classifier """
+        """Output """
         output = self.outputs(d4)
+        print(output.shape)
 
         return output
