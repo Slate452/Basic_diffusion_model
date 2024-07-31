@@ -22,6 +22,7 @@ epochs = 100 # Try more!
 def get_single_input():
     i = data[0].unsqueeze(0)
     t = torch.randint(0, T, (BATCH_SIZE,), device=device).long()
+    print(i.shape)
     return i, t
 
 def test_unet()-> None:
@@ -35,7 +36,7 @@ def test_unet()-> None:
 def test_time_embeding()-> None:
     img,t = get_single_input()
     enc = simple_unet.PositionalEncoding(embedding_dim=256, max_len=1000)
-    embeder = simple_unet.embed_time(3)
+    embeder = simple_unet.embed_time(6)
     t_enc = enc(t)
     embeder(img,t_enc,r =True)
     
@@ -61,3 +62,4 @@ def run_Diff_model() :
 #run_Diff_model()
 test_unet()
 #test_time_embeding()
+#get_single_input()

@@ -40,7 +40,7 @@ class embed_time(nn.Module):
         emb = self.emb_layer(t)
         emb = emb.view(emb.shape[0], emb.shape[1], 1, 1).repeat(1, 1, x.shape[-2], x.shape[-1])
         if r == True:
-            print(x. shape,"\n", emb.shape, "\n" , (x+emb).shape )
+            print(x. shape,"\n", emb.shape, "\n" )#, (x+emb).shape )
         else:
             return x + emb    
   
@@ -126,7 +126,7 @@ class build_unet(nn.Module):
         self.pos_encoding = PositionalEncoding(embedding_dim=time_dim, max_len=noise_steps)
         
         """ Encoder """
-        self.e1 = encoder_blck(3, 64)
+        self.e1 = encoder_blck(6, 64)
         self.e2 = encoder_blck(64, 128)
         self.e3 = encoder_blck(128, 256)
         self.e4 = encoder_blck(256, 512)
@@ -156,7 +156,7 @@ class build_unet(nn.Module):
 
 
         """ Classifier """
-        self.outputs = nn.Conv2d(64, 3, kernel_size=1, padding=0)
+        self.outputs = nn.Conv2d(64, 6, kernel_size=1, padding=0)
 
     def forward(self, inputs,t: torch.LongTensor):
         t = self.pos_encoding(t)
