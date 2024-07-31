@@ -1,7 +1,12 @@
-#TO DO 29/07/2024
+#TO DO 
 
-1. Add Possitional Encoding to Simple Unet
-2. Create Dataloader for OpenFOAM data 
+29/07/2024
+1. Add Possitional Encoding to Simple Unet : DONE
+2. Create Dataloader for OpenFOAM data  :ONGOING
+
+31/07/2024
+1. Fix Mem Allocation error in attention module:
+2. Write Attention Tests :
 
 
 

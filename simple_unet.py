@@ -28,7 +28,21 @@ class PositionalEncoding(nn.Module):
         if self.apply_dropout:
             return self.dropout(positional_encoding)
         return positional_encoding
-    
+
+class embed_time(nn.Module):
+    def __init__(self, out_c,dim:int =256):
+        super().__init__()
+        self.emb_layer = nn.Sequential(
+            nn.SiLU(),
+            nn.Linear(in_features=dim, out_features=out_c),
+            )
+    def forward(self, x, t, r:bool = False)->torch.tensor:
+        emb = self.emb_layer(t)
+        emb = emb.view(emb.shape[0], emb.shape[1], 1, 1).repeat(1, 1, x.shape[-2], x.shape[-1])
+        if r == True:
+            print(x. shape,"\n", emb.shape, "\n" , (x+emb).shape )
+        else:
+            return x + emb    
   
 class TransformerEncoderSA(nn.Module):
     def __init__(self, num_channels: int, size: int, num_heads: int = 4):
@@ -89,9 +103,6 @@ class encoder_blck(nn.Module):
         p = self.pool(x)
         return x , p
 
-
-
-
 class decoder_block(nn.Module):
     def __init__(self, in_c, out_c):
         super().__init__()
@@ -114,7 +125,6 @@ class build_unet(nn.Module):
         self.time_dim = time_dim
         self.pos_encoding = PositionalEncoding(embedding_dim=time_dim, max_len=noise_steps)
         
-        
         """ Encoder """
         self.e1 = encoder_blck(3, 64)
         self.e2 = encoder_blck(64, 128)
@@ -123,6 +133,10 @@ class build_unet(nn.Module):
         self.attn1 =TransformerEncoderSA(64, 64)
         self.attn2 = TransformerEncoderSA(128, 32)
         self.attn3 = TransformerEncoderSA(256, 16)
+        self.te1 = embed_time(64)
+        self.te2 = embed_time(128)
+        self.te3 = embed_time(256)
+        self.te4 = embed_time(512)
 
         """ Bottleneck """
         self.b = conv_block(512, 1024)
@@ -135,6 +149,10 @@ class build_unet(nn.Module):
         self.attnU1 =TransformerEncoderSA(256, 16)
         self.attnU2 = TransformerEncoderSA(128, 32)
         self.attnU3 = TransformerEncoderSA(64, 64)
+        self.teU1 = embed_time(512)
+        self.teU2 = embed_time(256)
+        self.teU3 = embed_time(126)
+        self.teU4 = embed_time(64)
 
 
         """ Classifier """
@@ -143,25 +161,42 @@ class build_unet(nn.Module):
     def forward(self, inputs,t: torch.LongTensor):
         t = self.pos_encoding(t)
         """ Encoder """
+        '''Frist Layer'''
         s1, p1 = self.e1(inputs)
+        s1 = self.te1(s1,t)
         s1= self.attn1(s1)
-        s2, p2 = self.e2(p1)
+        '''Second Layer'''
+        s2, p2 = self.e2(p1) 
+        s2 = self.te2(s2,t)
         s2= self.attn2(s2)
+        '''Third Layer'''
         s3, p3 = self.e3(p2)
+        s3 = self.te3(s3,t)
         s3= self.attn3(s3)
+        '''Third Layer'''
         s4, p4 = self.e4(p3)
+        s4 = self.te4(s4,t)
 
 
         """ Bottleneck """
         b = self.b(p4)
         print(b.shape)
         """ Decoder """
+        '''Frist Layer'''
         d1 = self.d1(b, s4)
+        d1 = self.teU1(d1,t)
+
         d2 = self.d2(d1, s3)
+        d2 = self.teU2(d2,t)
         d2 = self.attnU1(d2)
+        
+
         d3 = self.d3(d2, s2)
+        d3 = self.teU3(d3,t)
         d3 = self.attnU2(d3)
+
         d4 = self.d4(d3, s1)
+        d4 = self.teU4(d4,t)
         d4 = self.attnU3(d4)
 
         """Output """

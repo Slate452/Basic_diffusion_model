@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import process_data as prep
 from process_data import IMG_SIZE, BATCH_SIZE
 import Diffuser as diff
@@ -17,16 +19,26 @@ device =  "cpu"
 model.to(device)       
 optimizer = Adam(model.parameters(), lr=0.001)
 epochs = 100 # Try more!
-
-def test_unet():
-    #Test unet 
-    #inputs = torch.randn((2, 3, 512, 512))
+def get_single_input():
+    i = data[0].unsqueeze(0)
     t = torch.randint(0, T, (BATCH_SIZE,), device=device).long()
-    inputs = data[0].unsqueeze(0)
+    return i, t
+
+def test_unet()-> None:
+    #Test unet 
+    inputs, t = get_single_input()
     model = simple_unet.build_unet()
-    y = model(inputs)
+    y = model(inputs,t)
     y = y.squeeze(0)
     #prep.show_tensor_image(y)
+
+def test_time_embeding()-> None:
+    img,t = get_single_input()
+    enc = simple_unet.PositionalEncoding(embedding_dim=256, max_len=1000)
+    embeder = simple_unet.embed_time(3)
+    t_enc = enc(t)
+    embeder(img,t_enc,r =True)
+    
 
 
 def test_attention() ->None:
@@ -48,3 +60,4 @@ def run_Diff_model() :
 
 #run_Diff_model()
 test_unet()
+#test_time_embeding()
