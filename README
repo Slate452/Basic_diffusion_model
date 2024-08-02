@@ -4,9 +4,11 @@
 1. Add Possitional Encoding to Simple Unet : DONE
 2. Create Dataloader for OpenFOAM data  : DONE 
 
+
 31/07/2024 - 5/08/2024
 1. Fix Mem Allocation error in attention module# It's breaking the UNet:
 2. Write Attention Tests to debug process:
-3. Start Running Tests on SAMPLING OpenFOAM data  
+3. Start Running Tests on SAMPLING OpenFOAM data:
+4. Create notebook and test processes on Colab GPUs
 
 

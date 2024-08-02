@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-
 import process_data as prep
 from process_data import IMG_SIZE, BATCH_SIZE
 import Diffuser as diff
 from Diffuser import T
-import unet, simple_unet
+import unet
 import torch
 import torch.nn.functional as F
 import numpy as np
@@ -14,7 +13,7 @@ from torch.optim import Adam
 
 
 data, data_loader = prep.get_and_load_dataset()
-model = unet.AUnet() 
+model = unet.build_unet()
 device =  "cpu"
 model.to(device)       
 optimizer = Adam(model.parameters(), lr=0.001)
@@ -25,18 +24,18 @@ def get_single_input():
     print(i.shape)
     return i, t
 
-def test_unet()-> None:
+def Run_net()-> None:
     #Test unet 
     inputs, t = get_single_input()
-    model = simple_unet.build_unet()
+    model = unet.build_unet()
     y = model(inputs,t)
     y = y.squeeze(0)
     #prep.show_tensor_image(y)
 
-def test_time_embeding()-> None:
+def time_embeding()-> None:
     img,t = get_single_input()
-    enc = simple_unet.PositionalEncoding(embedding_dim=256, max_len=1000)
-    embeder = simple_unet.embed_time(6)
+    enc = unet.PositionalEncoding(embedding_dim=256, max_len=1000)
+    embeder = unet.embed_time(6)
     t_enc = enc(t)
     embeder(img,t_enc,r =True)
     
@@ -59,7 +58,5 @@ def run_Diff_model() :
                 print(f"Epoch {epoch} | step {step:03d} Loss: {loss.item()} ")
                 diff.sample_plot_image(model,device)
 
-#run_Diff_model()
-test_unet()
-#test_time_embeding()
-#get_single_input()
+get_single_input()
+#Run_net()

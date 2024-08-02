@@ -1,7 +1,6 @@
 import torch
-import torchvision
+import torch.nn as nn
 import torch.nn.functional as F
-from torch import nn
 import math
 
 class PositionalEncoding(nn.Module):
@@ -12,19 +11,6 @@ class PositionalEncoding(nn.Module):
             max_len: int = 1000,
             apply_dropout: bool = True,
     ):
-        """Section 3.5 of attention is all you need paper.
-
-        Extended slicing method is used to fill even and odd position of sin, cos with increment of 2.
-        Ex, `[sin, cos, sin, cos, sin, cos]` for `embedding_dim = 6`.
-
-        `max_len` is equivalent to number of noise steps or patches. `embedding_dim` must same as image
-        embedding dimension of the model.
-
-        Args:
-            embedding_dim: `d_model` in given positional encoding formula.
-            dropout: Dropout amount.
-            max_len: Number of embeddings to generate. Here, equivalent to total noise steps.
-        """
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=dropout)
         self.apply_dropout = apply_dropout
@@ -38,22 +24,28 @@ class PositionalEncoding(nn.Module):
         self.register_buffer(name='pos_encoding', tensor=pos_encoding, persistent=False)
 
     def forward(self, t: torch.LongTensor) -> torch.Tensor:
-        """Get precalculated positional embedding at timestep t. Outputs same as video implementation
-        code but embeddings are in [sin, cos, sin, cos] format instead of [sin, sin, cos, cos] in that code.
-        Also batch dimension is added to final output.
-        """
         positional_encoding = self.pos_encoding[t].squeeze(1)
         if self.apply_dropout:
             return self.dropout(positional_encoding)
         return positional_encoding
-    
 
+class embed_time(nn.Module):
+    def __init__(self, out_c,dim:int =256):
+        super().__init__()
+        self.emb_layer = nn.Sequential(
+            nn.SiLU(),
+            nn.Linear(in_features=dim, out_features=out_c),
+            )
+    def forward(self, x, t, r:bool = False)->torch.tensor:
+        emb = self.emb_layer(t)
+        emb = emb.view(emb.shape[0], emb.shape[1], 1, 1).repeat(1, 1, x.shape[-2], x.shape[-1])
+        if r == True:
+            print(x. shape,"\n", emb.shape, "\n" )#, (x+emb).shape )
+        else:
+            return x + emb    
   
 class TransformerEncoderSA(nn.Module):
     def __init__(self, num_channels: int, size: int, num_heads: int = 4):
-        """A block of transformer encoder with mutli head self attention from vision transformers paper,
-         https://arxiv.org/pdf/2010.11929.pdf.
-        """
         super(TransformerEncoderSA, self).__init__()
         self.num_channels = num_channels
         self.size = size
@@ -67,15 +59,6 @@ class TransformerEncoderSA(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Self attention.
-
-        Input feature map [4, 128, 32, 32], flattened to [4, 128, 32 x 32]. Which is reshaped to per pixel
-        feature map order, [4, 1024, 128].
-
-        Attention output is same shape as input feature map to multihead attention module which are added element wise.
-        Before returning attention output is converted back input feature map x shape. Opposite of feature map to
-        mha input is done which gives output [4, 128, 32, 32].
-        """
         x = x.view(-1, self.num_channels, self.size * self.size).permute(0, 2, 1)
         x_ln = self.ln(x)
         attention_value, _ = self.mha(query=x_ln, key=x_ln, value=x_ln)
@@ -83,102 +66,141 @@ class TransformerEncoderSA(nn.Module):
         attention_value = self.ff_self(attention_value) + attention_value
         return attention_value.permute(0, 2, 1).view(-1, self.num_channels, self.size, self.size)
 
-class Block(nn.Module):
-    def __init__(self, in_ch, out_ch, time_emb_dim, up=False):
+class conv_block(nn.Module):
+    def __init__(self, in_channels, out_channels):
         super().__init__()
-        self.time_mlp = nn.Linear(time_emb_dim, out_ch)
-        if up:
-            self.conv1 = nn.Conv2d(2*in_ch, out_ch, 3, padding=1)
-            self.transform = nn.ConvTranspose2d(out_ch, out_ch, 4, 2, 1)
-        else:
-            self.conv1 = nn.Conv2d(in_ch, out_ch, 3, padding=1)
-            self.transform = nn.Conv2d(out_ch, out_ch, 4, 2, 1)
-        self.conv2 = nn.Conv2d(out_ch, out_ch, 3, padding=1)
-        self.bnorm1 = nn.BatchNorm2d(out_ch)
-        self.bnorm2 = nn.BatchNorm2d(out_ch)
+
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1)
+        self.bn1 = nn.BatchNorm2d(out_channels)
+
         self.relu = nn.ReLU()
-        self.attn = TransformerEncoderSA(out_ch, 16)
-        
-    def forward(self, x, t):
-        # First Conv
-        h = self.bnorm1(self.relu(self.conv1(x)))
-        # Time embedding
-        time_emb = self.relu(self.time_mlp(t))
-        # Extend last 2 dimensions
-        time_emb = time_emb.unsqueeze(-1).unsqueeze(-1)
-        time_emb = time_emb.expand(-1, -1, h.shape[2], h.shape[3])
-        # Add time channel
-        h = h + time_emb
-        #
-        # Second Conv
-        h = self.bnorm2(self.relu(self.conv2(h)))
-    
-        # Down or Upsample
-        return self.transform(h)
 
-#Get rid of this in favor of pos encodinfh 
-class SinusoidalPositionEmbeddings(nn.Module):
-    def __init__(self, dim):
+        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1)
+        self.bn2 = nn.BatchNorm2d(out_channels)
+
+
+    def forward(self, inputs):
+        x = self.conv1(inputs)
+        x = self.bn1(x)
+        x = self.relu(x)
+
+        x = self.conv2(x)
+        x = self.bn2(x)
+        x = self.relu(x)
+
+        return x
+
+
+class encoder_blck(nn.Module):
+    def __init__(self, in_channels, out_channels):
         super().__init__()
-        self.dim = dim
 
-    def forward(self, time):
-        device = time.device
-        half_dim = self.dim // 2
-        embeddings = math.log(10000) / (half_dim - 1)
-        embeddings = torch.exp(torch.arange(half_dim, device=device) * -embeddings)
-        embeddings = time[:, None] * embeddings[None, :]
-        embeddings = torch.cat((embeddings.sin(), embeddings.cos()), dim=-1)
-        return embeddings
+        self.conv = conv_block(in_channels, out_channels)
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
 
+    def forward(self, inputs):
+        x = self.conv(inputs)
+        p = self.pool(x)
+        return x , p
 
-class AUnet(nn.Module):
-    """
-    A simplified variant of the UNet architecture.
-    """
-    def __init__(self):
+class decoder_block(nn.Module):
+    def __init__(self, in_c, out_c):
         super().__init__()
-        image_channels = 3
-        down_channels = (64, 128, 256, 512, 1024)
-        up_channels = (1024, 512, 256, 128, 64)
-        up_attn_size = ()
-        out_dim = 3 
-        time_emb_dim = 32
-        noise_steps = 1000
 
-        # Time embedding
-        '''self.time_mlp = nn.Sequential(
-            SinusoidalPositionEmbeddings(time_emb_dim),
-            nn.Linear(time_emb_dim, time_emb_dim),
-            nn.ReLU()
-        )'''
-        self.time_mlp = PositionalEncoding(embedding_dim=time_emb_dim, max_len=noise_steps)
-        
-        # Initial projection
-        self.conv0 = nn.Conv2d(image_channels, down_channels[0], 3, padding=1)
+        self.up = nn.ConvTranspose2d(in_c, out_c, kernel_size=2, stride=2, padding=0)
+        self.conv = conv_block(out_c+out_c, out_c)
 
-        # Downsample
-        self.downs = nn.ModuleList([Block(down_channels[i], down_channels[i+1], time_emb_dim) for i in range(len(down_channels)-1)])
-        
-        # Upsample
-        self.ups = nn.ModuleList([Block(up_channels[i], up_channels[i+1], time_emb_dim, up=True) for i in range(len(up_channels)-1)])
-        
-        # Output layer
-        self.output = nn.Conv2d(up_channels[-1], out_dim, 1)
+    def forward(self, inputs, skip):
+        x = self.up(inputs)
+        x = torch.cat([x, skip], axis=1)
+        x = self.conv(x)
 
-    def forward(self, x, timestep):
-        # Embed time
-        t = self.time_mlp(timestep)
-        # Initial conv
-        x = self.conv0(x)
-        # UNet
-        residual_inputs = []
-        for down in self.downs:
-            x = down(x, t)
-            residual_inputs.append(x)
-        for up in self.ups:
-            residual_x = residual_inputs.pop()
-            x = torch.cat((x, residual_x), dim=1)  # Concatenate along the channel dimension
-            x = up(x, t)
-        print("Total Number of parameters: ", sum(p.numel() for p in self.parameters()))
-        return self.output(x)
+        return x
+
+class build_unet(nn.Module):
+    def __init__(self,
+                noise_steps: int = 1000,
+                time_dim: int = 256,):
+        super().__init__()
+        self.time_dim = time_dim
+        self.pos_encoding = PositionalEncoding(embedding_dim=time_dim, max_len=noise_steps)
+        
+        """ Encoder """
+        self.e1 = encoder_blck(6, 64)
+        self.e2 = encoder_blck(64, 128)
+        self.e3 = encoder_blck(128, 256)
+        self.e4 = encoder_blck(256, 512)
+        self.attn1 =TransformerEncoderSA(64, 64)
+        self.attn2 = TransformerEncoderSA(128, 32)
+        self.attn3 = TransformerEncoderSA(256, 16)
+        self.te1 = embed_time(64)
+        self.te2 = embed_time(128)
+        self.te3 = embed_time(256)
+        self.te4 = embed_time(512)
+
+        """ Bottleneck """
+        self.b = conv_block(512, 1024)
+
+        """ Decoder """
+        self.d1 = decoder_block(1024, 512)
+        self.d2 = decoder_block(512, 256)
+        self.d3 = decoder_block(256, 128)
+        self.d4 = decoder_block(128, 64)
+        self.attnU1 =TransformerEncoderSA(256, 16)
+        self.attnU2 = TransformerEncoderSA(128, 32)
+        self.attnU3 = TransformerEncoderSA(64, 64)
+        self.teU1 = embed_time(512)
+        self.teU2 = embed_time(256)
+        self.teU3 = embed_time(126)
+        self.teU4 = embed_time(64)
+
+
+        """ Classifier """
+        self.outputs = nn.Conv2d(64, 6, kernel_size=1, padding=0)
+
+    def forward(self, inputs,t: torch.LongTensor):
+        t = self.pos_encoding(t)
+        """ Encoder """
+        '''Frist Layer'''
+        s1, p1 = self.e1(inputs)
+        s1 = self.te1(s1,t)
+        s1= self.attn1(s1)
+        '''Second Layer'''
+        s2, p2 = self.e2(p1) 
+        s2 = self.te2(s2,t)
+        s2= self.attn2(s2)
+        '''Third Layer'''
+        s3, p3 = self.e3(p2)
+        s3 = self.te3(s3,t)
+        s3= self.attn3(s3)
+        '''Third Layer'''
+        s4, p4 = self.e4(p3)
+        s4 = self.te4(s4,t)
+
+
+        """ Bottleneck """
+        b = self.b(p4)
+        print(b.shape)
+        """ Decoder """
+        '''Frist Layer'''
+        d1 = self.d1(b, s4)
+        d1 = self.teU1(d1,t)
+
+        d2 = self.d2(d1, s3)
+        d2 = self.teU2(d2,t)
+        d2 = self.attnU1(d2)
+        
+
+        d3 = self.d3(d2, s2)
+        d3 = self.teU3(d3,t)
+        d3 = self.attnU2(d3)
+
+        d4 = self.d4(d3, s1)
+        d4 = self.teU4(d4,t)
+        d4 = self.attnU3(d4)
+
+        """Output """
+        output = self.outputs(d4)
+        print(output.shape)
+
+        return output
