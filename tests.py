@@ -22,15 +22,10 @@ def get_single_input():
     i = data[0].unsqueeze(0)
     t = torch.randint(0, T, (BATCH_SIZE,), device=device).long()
     print(i.shape)
+    prep.plot(i)
     return i, t
 
-def Run_net()-> None:
-    #Test unet 
-    inputs, t = get_single_input()
-    model = unet.build_unet()
-    y = model(inputs,t)
-    y = y.squeeze(0)
-    #prep.show_tensor_image(y)
+
 
 def time_embeding()-> None:
     img,t = get_single_input()
@@ -43,14 +38,24 @@ def time_embeding()-> None:
 
 def test_attention() ->None:
     #Test Multihead Attention and Transfromer Implimentation
-    x=1
+    Done=False
 
+@torch.no_grad()
+def Run_net()-> None:
+    #Test unet 
+    inputs, t = get_single_input()
+    model = unet.build_unet()
+    y = model(inputs,t)
+    y = y.squeeze(0)
+    #prep.show_tensor_image(y)
+
+
+@torch.no_grad()
 def run_Diff_model() :
     for epoch in range(epochs):
         for step, batch in enumerate(data_loader):
             optimizer.zero_grad() 
             t = torch.randint(0, T, (BATCH_SIZE,), device=device).long()
-            
             loss = diff.get_loss(model, batch[0].unsqueeze(0), t)
             loss.backward()
             optimizer.step()
@@ -59,4 +64,3 @@ def run_Diff_model() :
                 diff.sample_plot_image(model,device)
 
 get_single_input()
-#Run_net()

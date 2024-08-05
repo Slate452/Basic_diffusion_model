@@ -11,6 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
+
 BATCH_SIZE = 128
 IMG_SIZE = 124
 
@@ -118,3 +119,38 @@ def get_and_load_dataset(img_dir = "./data/1_parameter/results"):
         loader = DataLoader(combined_dataset, batch_size=BATCH_SIZE, shuffle=True, drop_last=True)
         print(f"Total images in combined dataset: {len(combined_dataset)}")
         return combined_dataset, loader
+
+def plot_tensor_channels(tensor, cmap='viridis'):
+    num_channels = tensor.shape[0]
+    fig, axes = plt.subplots(1, num_channels, figsize=(15, 15))
+
+    channel_names = ["vel","pressure", "so", "on", "so2", "on2"]
+    
+    if num_channels == 1:
+        axes = [axes]  
+    
+    for i, ax in enumerate(axes):
+        im = ax.imshow(tensor[i], cmap=cmap)
+        ax.set_title(channel_names[i])
+        fig.colorbar(im, ax=ax, orientation='vertical', fraction=0.046, pad=0.04)
+    plt.show()
+
+
+
+def plot(case:torch.tensor = torch.randn(6, 128, 128)):
+    # Convert to NumPy array
+    if case.ndim == 4 and case.size(0) > 1:
+        print("The tensor is a batch of images with more than one element.")
+        for s in range(0,5):
+            d = case[s].squeeze(0)
+            np_array = d.numpy()
+            plot_tensor_channels(np_array, cmap='viridis')
+    else:
+        if case.ndim == 4:
+            print("The tensor is a batch of images with one or fewer elements.")
+            case = case[0].squeeze(0)
+            np_array = case.numpy()
+            plot_tensor_channels(np_array, cmap='viridis')
+        else:
+            np_array = case.numpy()
+            plot_tensor_channels(np_array, cmap='viridis')

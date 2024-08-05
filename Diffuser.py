@@ -3,7 +3,7 @@ import torchvision
 import torch.nn.functional as F
 from torchvision import transforms
 from torch.utils.data import DataLoader
-from process_data import show_tensor_image
+from process_data import plot
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
@@ -73,8 +73,6 @@ def sample_timestep(x,  t, model):
     posterior_variance_t = get_index_from_list(posterior_variance, t, x.shape)
     
     if t == 0:
-        # As pointed out by Luis Pereira (see YouTube comment)
-        # The t's are offset from the t's in the paper
         return model_mean
     else:
         noise = torch.randn_like(x)
@@ -83,10 +81,9 @@ def sample_timestep(x,  t, model):
 @torch.no_grad()
 def sample_plot_image(model,device):
     # Sample noise
-    img_size = 64
-    img = torch.randn((1, 3, img_size, img_size), device=device)
-    plt.figure(figsize=(15,15))
-    plt.axis('off')
+    img_size = 128
+    img = torch.randn((1, 6, img_size, img_size), device=device)
+
     num_images = 10
     stepsize = int(T/num_images)
 
@@ -97,7 +94,7 @@ def sample_plot_image(model,device):
         img = torch.clamp(img, -1.0, 1.0)
         '''if i % stepsize == 0:
             plt.subplot(1, num_images, int(i/stepsize)+1)
-            #show_tensor_image(img.detach().cpu())
+            plot(img.detach().cpu())
             dfdb =0 
    #
    # plt.show()'''

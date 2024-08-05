@@ -1,14 +1,28 @@
 #TO DO 
 
 29/07/2024
-1. Add Possitional Encoding to Simple Unet : DONE
-2. Create Dataloader for OpenFOAM data  : DONE 
+1. Added Possitional Encoding to Simple Unet
+2. Created Dataloader for OpenFOAM data  
 
 
-31/07/2024 - 5/08/2024
-1. Fix Mem Allocation error in attention module# It's breaking the UNet:
-2. Write Attention Tests to debug process:
-3. Start Running Tests on SAMPLING OpenFOAM data:
-4. Create notebook and test processes on Colab GPUs
+5/08/2024
+1. Fixed Mem Allocation error in attention module# It's breaking the UNet
+2. Added Plot function For visualization
+3. Added Compressed datasets for use on colab
+
+
+
+
+
+
+TO DO
+1. create dataset extraction function
+2. Move everything to cuda
+
+
+
+ONGOING
+1. Running Tests on SAMPLING OpenFOAM data
+2. notebook and test processes on Colab GPUs 
 
 
