@@ -18,6 +18,9 @@ device =  "cpu"
 model.to(device)       
 optimizer = Adam(model.parameters(), lr=0.001)
 epochs = 100 # Try more!
+def gpu_tests():
+    model.to("cuda")
+    prep.move_to_gpu(data_loader,data)
 
 def get_single_input():
     i = data[0].unsqueeze(0)
