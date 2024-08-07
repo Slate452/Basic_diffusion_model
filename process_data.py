@@ -122,10 +122,10 @@ def get_and_load_dataset(img_dir = "./data/1_parameter/results"):
 
 def move_batch_to_gpu(batch):
     if torch.cuda.is_available():
-        batch = batch.cuda()
+        batch = batch.to('cuda')
     return batch
 def move_to_gpu(loader, data:any = 0):
-    data.cuda()
+    data.to('cuda')
     for batch in loader:
         batch = move_batch_to_gpu(batch)
         print(batch.size())
