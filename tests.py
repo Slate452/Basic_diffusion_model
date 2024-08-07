@@ -18,6 +18,7 @@ device =  "cpu"
 model.to(device)       
 optimizer = Adam(model.parameters(), lr=0.001)
 epochs = 100 # Try more!
+
 def get_single_input():
     i = data[0].unsqueeze(0)
     t = torch.randint(0, T, (BATCH_SIZE,), device=device).long()
@@ -62,5 +63,3 @@ def run_Diff_model() :
             if epoch % 5 == 0 and step == 0:
                 print(f"Epoch {epoch} | step {step:03d} Loss: {loss.item()} ")
                 diff.sample_plot_image(model,device)
-
-get_single_input()

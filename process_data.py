@@ -120,6 +120,16 @@ def get_and_load_dataset(img_dir = "./data/1_parameter/results"):
         print(f"Total images in combined dataset: {len(combined_dataset)}")
         return combined_dataset, loader
 
+def move_batch_to_gpu(batch):
+    if torch.cuda.is_available():
+        batch = batch.cuda()
+    return batch
+def move_to_gpu(loader, data:any = 0):
+    data.cuda()
+    for batch in loader:
+        batch = move_batch_to_gpu(batch)
+        print(batch.size())
+
 def plot_tensor_channels(tensor, cmap='viridis'):
     num_channels = tensor.shape[0]
     fig, axes = plt.subplots(1, num_channels, figsize=(15, 15))
