@@ -53,7 +53,7 @@ def get_loss(model, x_0, t):
     noise_pred = model(x_noisy, t)
     return F.l1_loss(noise, noise_pred)
 
-@torch.no_grad()
+
 def sample_timestep(x,  t, model):
     """
     Calls the model to predict the noise in the image and returns 
@@ -78,7 +78,7 @@ def sample_timestep(x,  t, model):
         noise = torch.randn_like(x)
         return model_mean + torch.sqrt(posterior_variance_t) * noise 
 
-@torch.no_grad()
+
 def sample_plot_image(model,device):
     # Sample noise
     img_size = 128
@@ -92,9 +92,7 @@ def sample_plot_image(model,device):
         img = sample_timestep(img, t, model=model)
         # Edit: This is to maintain the natural range of the distribution
         img = torch.clamp(img, -1.0, 1.0)
-        '''if i % stepsize == 0:
+        if i % stepsize == 0:
             plt.subplot(1, num_images, int(i/stepsize)+1)
             plot(img.detach().cpu())
             dfdb =0 
-   #
-   # plt.show()'''

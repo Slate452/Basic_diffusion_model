@@ -64,6 +64,6 @@ def run_Diff_model() :
             optimizer.step()
             if epoch % 5 == 0 and step == 0:
                 print(f"Epoch {epoch} | step {step:03d} Loss: {loss.item()} ")
-                diff.sample_plot_image(model,device)
+                #diff.sample_plot_image(model,device) // Re write this for my plot function and run it in tests
 
 Run_net()
