@@ -44,7 +44,7 @@ def test_attention() ->None:
     #Test Multihead Attention and Transfromer Implimentation
     Done=False
 
-
+@torch.no_grad()
 def Run_net()-> None:
     #Test unet 
     inputs, t = get_single_input()
@@ -53,6 +53,7 @@ def Run_net()-> None:
     prep.plot(y)
 
 
+@torch.no_grad()
 def run_Diff_model() :
     for epoch in range(epochs):
         for step, batch in enumerate(data_loader):
@@ -63,6 +64,6 @@ def run_Diff_model() :
             optimizer.step()
             if epoch % 5 == 0 and step == 0:
                 print(f"Epoch {epoch} | step {step:03d} Loss: {loss.item()} ")
-                #diff.sample_plot_image(model,device) // Re write this for my plot function and run it in tests
+                #diff.sample_plot_image(model,device) // Re write this for my plot functopn 
 
 Run_net()
