@@ -12,7 +12,7 @@ import matplotlib.image as mpimg
 from torch.optim import Adam
 
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = "cpu"
 
 data, data_loader = prep.get_and_load_dataset()
 model = unet.build_unet()
@@ -26,7 +26,7 @@ def get_single_input():
     i = data[0].unsqueeze(0)
     t = torch.randint(0, T, (BATCH_SIZE,), device=device).long()
     print(i.shape)
-    prep.plot(i)
+    #prep.plot(i)
     return i, t
 
 
@@ -50,8 +50,7 @@ def Run_net()-> None:
     inputs, t = get_single_input()
     model = unet.build_unet()
     y = model(inputs,t)
-    y = y.squeeze(0)
-    #prep.show_tensor_image(y)
+    prep.plot(y)
 
 
 @torch.no_grad()
@@ -66,3 +65,5 @@ def run_Diff_model() :
             if epoch % 5 == 0 and step == 0:
                 print(f"Epoch {epoch} | step {step:03d} Loss: {loss.item()} ")
                 diff.sample_plot_image(model,device)
+
+Run_net()

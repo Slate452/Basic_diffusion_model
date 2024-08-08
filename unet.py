@@ -146,12 +146,12 @@ class build_unet(nn.Module):
         self.d2 = decoder_block(512, 256)
         self.d3 = decoder_block(256, 128)
         self.d4 = decoder_block(128, 64)
-        self.attnU1 =TransformerEncoderSA(256, 16)
-        self.attnU2 = TransformerEncoderSA(128, 32)
-        self.attnU3 = TransformerEncoderSA(64, 64)
+        self.attnU1 =TransformerEncoderSA(256, 32)
+        self.attnU2 = TransformerEncoderSA(128, 64)
+        self.attnU3 = TransformerEncoderSA(64, 128)
         self.teU1 = embed_time(512)
         self.teU2 = embed_time(256)
-        self.teU3 = embed_time(126)
+        self.teU3 = embed_time(128)
         self.teU4 = embed_time(64)
 
 
@@ -162,45 +162,59 @@ class build_unet(nn.Module):
         t = self.pos_encoding(t)
         """ Encoder """
         '''Frist Layer'''
+        print(inputs.shape)
         s1, p1 = self.e1(inputs)
-        s1 = self.te1(s1,t)
-        s1= self.attn1(s1)
+        p1 = self.te1(p1,t)
+        p1= self.attn1(p1)
+        print(p1.shape)
         '''Second Layer'''
         s2, p2 = self.e2(p1) 
-        s2 = self.te2(s2,t)
-        s2= self.attn2(s2)
+        p2 = self.te2(p2,t)
+        p2= self.attn2(p2)
+        print(p2.shape)
         '''Third Layer'''
         s3, p3 = self.e3(p2)
-        s3 = self.te3(s3,t)
-        s3= self.attn3(s3)
+        p3 = self.te3(p3,t)
+        p3= self.attn3(p3)
+        print(p3.shape)
         '''Third Layer'''
         s4, p4 = self.e4(p3)
-        s4 = self.te4(s4,t)
+        p4 = self.te4(p4,t)
+        print(p4.shape)
 
 
         """ Bottleneck """
         b = self.b(p4)
-        print(b.shape)
+        #s4 = self.b
+        print(b.shape, s4.shape)
         """ Decoder """
-        '''Frist Layer'''
+        
         d1 = self.d1(b, s4)
         d1 = self.teU1(d1,t)
+        print(s4.shape, d1.shape)
 
         d2 = self.d2(d1, s3)
+        print(s3.shape, d2.shape) # why does the batch size explode after this
         d2 = self.teU2(d2,t)
+        print(d2.shape) # why does the batch size explode after this
         d2 = self.attnU1(d2)
-        
+        print(d2.shape)
+
+
 
         d3 = self.d3(d2, s2)
         d3 = self.teU3(d3,t)
         d3 = self.attnU2(d3)
+        print(s2.shape, d3.shape)
 
         d4 = self.d4(d3, s1)
         d4 = self.teU4(d4,t)
         d4 = self.attnU3(d4)
+        print(s1.shape, d4.shape)
 
         """Output """
         output = self.outputs(d4)
         print(output.shape)
 
         return output
+
