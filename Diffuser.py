@@ -93,6 +93,4 @@ def sample_plot_image(model,device):
         # Edit: This is to maintain the natural range of the distribution
         img = torch.clamp(img, -1.0, 1.0)
         if i % stepsize == 0:
-            plt.subplot(1, num_images, int(i/stepsize)+1)
-            plot(img.detach().cpu())
-            dfdb =0 
+           plot(img)

@@ -44,7 +44,7 @@ def test_attention() ->None:
     #Test Multihead Attention and Transfromer Implimentation
     Done=False
 
-@torch.no_grad()
+
 def Run_net()-> None:
     #Test unet 
     inputs, t = get_single_input()
@@ -53,7 +53,6 @@ def Run_net()-> None:
     prep.plot(y)
 
 
-@torch.no_grad()
 def run_Diff_model() :
     for epoch in range(epochs):
         for step, batch in enumerate(data_loader):
