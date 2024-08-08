@@ -65,3 +65,5 @@ def run_Diff_model() :
             if epoch % 5 == 0 and step == 0:
                 print(f"Epoch {epoch} | step {step:03d} Loss: {loss.item()} ")
                 diff.sample_plot_image(model,device)
+
+Run_net()

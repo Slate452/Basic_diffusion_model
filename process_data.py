@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
 
-BATCH_SIZE = 4
+BATCH_SIZE = 1
 IMG_SIZE = 128
 
 def read_file_to_list(file_path):
@@ -117,7 +117,7 @@ def get_and_load_dataset(img_dir = "./data/1_parameter/results"):
 
         combined_dataset = ConcatDataset([train_dataset, test_dataset])
         loader = DataLoader(combined_dataset, batch_size=BATCH_SIZE, shuffle=True, drop_last=True)
-        print(f"Total images in combined dataset: {len(combined_dataset)}")
+        print(f"Combined dataset: {len(combined_dataset)}")
         return combined_dataset, loader
 
 def move_batch_to_gpu(batch):

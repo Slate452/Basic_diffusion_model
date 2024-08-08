@@ -166,7 +166,7 @@ class build_unet(nn.Module):
         s1, p1 = self.e1(inputs)
         p1 = self.te1(p1,t)
         p1= self.attn1(p1)
-        print(p1.shape)
+        print(p1.shape,s1.shape)
         '''Second Layer'''
         s2, p2 = self.e2(p1) 
         p2 = self.te2(p2,t)
@@ -194,23 +194,26 @@ class build_unet(nn.Module):
         print(s4.shape, d1.shape)
 
         d2 = self.d2(d1, s3)
-        print(s3.shape, d2.shape) # why does the batch size explode after this
+        print("layer 2",s3.shape, d2.shape) # why does the batch size explode after this
         d2 = self.teU2(d2,t)
         print(d2.shape) # why does the batch size explode after this
         d2 = self.attnU1(d2)
         print(d2.shape)
+        print( s3.shape, d2.shape)
 
 
 
         d3 = self.d3(d2, s2)
         d3 = self.teU3(d3,t)
         d3 = self.attnU2(d3)
-        print(s2.shape, d3.shape)
+        print("layer 3",s2.shape, d3.shape)
 
+        print("layer 4", s1.shape)
         d4 = self.d4(d3, s1)
+        print("layer 4", s1.shape, d4.shape)
         d4 = self.teU4(d4,t)
         d4 = self.attnU3(d4)
-        print(s1.shape, d4.shape)
+#        print("layer 4", s1.shape, d4.shape)
 
         """Output """
         output = self.outputs(d4)
