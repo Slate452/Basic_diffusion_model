@@ -139,7 +139,7 @@ class build_unet(nn.Module):
         self.te4 = embed_time(512)
 
         """ Bottleneck """
-        self.b = conv_block(512, 1024)
+        self.b = conv_block(128, 256)
 
         """ Decoder """
         self.d1 = decoder_block(1024, 512)
@@ -172,6 +172,9 @@ class build_unet(nn.Module):
         p2 = self.te2(p2,t)
         p2= self.attn2(p2)
       #  print(p2.shape)
+        """ Bottleneck """
+        b = self.b(p2)
+        """
         '''Third Layer'''
         s3, p3 = self.e3(p2)
         p3 = self.te3(p3,t)
@@ -181,23 +184,23 @@ class build_unet(nn.Module):
         s4, p4 = self.e4(p3)
         p4 = self.te4(p4,t)
         #print(p4.shape)
-        """ Bottleneck """
-        b = self.b(p4)
         #s4 = self.b
         #print(b.shape, s4.shape)
-        """ Decoder """
         '''Fourth Layer'''
         d1 = self.d1(b, s4)
         d1 = self.teU1(d1,t)
-    #    print(s4.shape, d1.shape)
+        #print(s4.shape, d1.shape)
         '''Third Layer'''
         d2 = self.d2(d1, s3)
         d2 = self.teU2(d2,t)
         d2 = self.attnU1(d2)
-  #      print(d2.shape)
-#        print( s3.shape, d2.shape)
+        #print(d2.shape)
+        #print( s3.shape, d2.shape)
+        """
+
+        """ Decoder """
         '''Second Layer'''
-        d3 = self.d3(d2, s2)
+        d3 = self.d3(b, s2)
         d3 = self.teU3(d3,t)
         d3 = self.attnU2(d3)
         #print("layer 3",s2.shape, d3.shape)

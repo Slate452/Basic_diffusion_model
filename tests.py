@@ -61,17 +61,19 @@ def run_Diff_model() :
             optimizer.zero_grad() 
             t = torch.randint(0, T, (BATCH_SIZE,), device=device).long()
             loss = diff.get_loss(model, batch[0].unsqueeze(0), t)
-            print(loss)
+            print(" Epoch ", epoch,"Loss: ", loss," Step: ", step)
             loss.backward()
             optimizer.step()
-            if epoch % 5 == 0 and step == 0:
+            
+            if epoch > 1 and epoch % 5 == 0 and step == 0:
                 print(f"Epoch {epoch} | step {step:03d} Loss: {loss.item()} ")
                 diff.sample_plot_image(model,device)
-    torch.save({
-        'model_state_dict': model.state_dict(),
-        'optimizer_state_dict': optimizer.state_dict(),
-    }, save_path)
-    print(f"Model saved to {save_path}")
+                torch.save({
+                    'model_state_dict': model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    }, save_path)
+                print(f"Model saved to {save_path}")
+
 
 def load_model(model_path=save_path, device=device):
     model = unet.build_unet().to(device)  # Rebuild the model and move it to the appropriate device
