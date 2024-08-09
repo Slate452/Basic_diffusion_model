@@ -51,7 +51,9 @@ posterior_variance = betas * (1. - alphas_cumprod_prev) / (1. - alphas_cumprod)
 def get_loss(model, x_0, t):
     x_noisy, noise = forward_diffusion(x_0, t)
     noise_pred = model(x_noisy, t)
-    return F.l1_loss(noise, noise_pred)
+    l =F.l1_loss(noise, noise_pred)
+    l.requires_grad_()
+    return l
 
 
 def sample_timestep(x,  t, model):
@@ -84,7 +86,7 @@ def sample_plot_image(model,device):
     img_size = 128
     img = torch.randn((1, 6, img_size, img_size), device=device)
 
-    num_images = 10
+    num_images = 3
     stepsize = int(T/num_images)
 
     for i in range(0,T)[::-1]:

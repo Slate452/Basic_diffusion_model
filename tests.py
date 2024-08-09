@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 from torch.optim import Adam
 
-
+save_path = './models/dif_model.pth'
 device = "cpu"
 
 data, data_loader = prep.get_and_load_dataset()
@@ -44,7 +44,7 @@ def test_attention() ->None:
     #Test Multihead Attention and Transfromer Implimentation
     Done=False
 
-@torch.no_grad()
+
 def Run_net()-> None:
     #Test unet 
     inputs, t = get_single_input()
@@ -57,13 +57,33 @@ def Run_net()-> None:
 def run_Diff_model() :
     for epoch in range(epochs):
         for step, batch in enumerate(data_loader):
+            batch.requires_grad_()
             optimizer.zero_grad() 
             t = torch.randint(0, T, (BATCH_SIZE,), device=device).long()
             loss = diff.get_loss(model, batch[0].unsqueeze(0), t)
+            print(loss)
             loss.backward()
             optimizer.step()
             if epoch % 5 == 0 and step == 0:
                 print(f"Epoch {epoch} | step {step:03d} Loss: {loss.item()} ")
-                #diff.sample_plot_image(model,device) // Re write this for my plot functopn 
+                diff.sample_plot_image(model,device)
+    torch.save({
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+    }, save_path)
+    print(f"Model saved to {save_path}")
 
-Run_net()
+def load_model(model_path=save_path, device=device):
+    model = unet.build_unet().to(device)  # Rebuild the model and move it to the appropriate device
+    optimizer = Adam(model.parameters(), lr=0.001)  # Recreate the optimizer
+
+    # Load the state dictionaries
+    checkpoint = torch.load(model_path, map_location=device)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
+    model.eval()  # Set the model to evaluation mode
+    print(f"Model loaded from {model_path}")
+    return model, optimizer
+
+run_Diff_model()
