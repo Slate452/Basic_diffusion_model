@@ -140,7 +140,7 @@ def plot_tensor_channels(tensor, cmap='viridis'):
 
 
 def plot(case:torch.tensor = torch.randn(6, 128, 128)):
-    case.to("cpu")
+    case = case.cpu()
     # Convert to NumPy array
     if case.ndim == 4 and case.size(0) > 1:
         print("The tensor is a batch of images with more than one element.")
