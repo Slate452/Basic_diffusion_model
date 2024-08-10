@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import process_data as prep
 from process_data import IMG_SIZE, BATCH_SIZE
 import Diffuser as diff
@@ -13,7 +14,7 @@ from torch.optim import Adam
 
 save_path = './models/dif_model.pth'
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+os.makedirs('./models', exist_ok=True)
 
 data, data_loader, test_Dloader = prep.get_and_load_dataset()
 model = unet.build_unet()
