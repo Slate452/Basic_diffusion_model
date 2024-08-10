@@ -121,15 +121,6 @@ def get_and_load_dataset(img_dir = "./data/1_parameter/results"):
         print(f"Combined dataset: {len(combined_dataset)}")
         return combined_dataset, train_loader, test_loader
 
-def move_batch_to_gpu(batch):
-    if torch.cuda.is_available():
-        batch = batch.to('cuda')
-    return batch
-def move_to_gpu(loader, data:any = 0):
-    data.to('cuda')
-    for batch in loader:
-        batch = move_batch_to_gpu(batch)
-        print(batch.size())
 
 def plot_tensor_channels(tensor, cmap='viridis'):
     num_channels = tensor.shape[0]
@@ -149,6 +140,7 @@ def plot_tensor_channels(tensor, cmap='viridis'):
 
 
 def plot(case:torch.tensor = torch.randn(6, 128, 128)):
+    case.to("cpu")
     # Convert to NumPy array
     if case.ndim == 4 and case.size(0) > 1:
         print("The tensor is a batch of images with more than one element.")

@@ -70,12 +70,14 @@ def run_Diff_model() :
             
             if epoch > 1 and epoch % 5 == 0 and step == 0:
                 print(f"Epoch {epoch} | step {step:03d} Loss: {loss.item()} ")
-                diff.sample_plot_image(model,device)
                 torch.save({
                     'model_state_dict': model.state_dict(),
                     'optimizer_state_dict': optimizer.state_dict(),
                     }, save_path)
                 print(f"Model saved to {save_path}")
+                diff.sample_plot_image(model,device)
+        
+
 
 
 def load_model(model_path=save_path, device=device):
