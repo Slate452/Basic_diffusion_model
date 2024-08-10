@@ -93,3 +93,5 @@ def load_model(model_path=save_path, device=device):
     model.eval()  # Set the model to evaluation mode
     print(f"Model loaded from {model_path}")
     return model, optimizer
+
+run_Diff_model()
