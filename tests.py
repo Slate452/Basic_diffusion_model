@@ -12,9 +12,10 @@ import matplotlib.image as mpimg
 from torch.optim import Adam
 
 save_path = './models/dif_model.pth'
-device = "cpu"
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-data, data_loader = prep.get_and_load_dataset()
+
+data, data_loader, test_Dloader = prep.get_and_load_dataset()
 model = unet.build_unet()
 
 model.to(device)       
@@ -24,6 +25,7 @@ epochs = 100 # Try more!
 
 def get_single_input():
     i = data[0].unsqueeze(0)
+    i.to(device)
     t = torch.randint(0, T, (BATCH_SIZE,), device=device).long()
     print(i.shape)
     #prep.plot(i)
@@ -58,9 +60,10 @@ def run_Diff_model() :
     for epoch in range(epochs):
         for step, batch in enumerate(data_loader):
             batch.requires_grad_()
+            batch.to(device)
             optimizer.zero_grad() 
             t = torch.randint(0, T, (BATCH_SIZE,), device=device).long()
-            loss = diff.get_loss(model, batch[0].unsqueeze(0), t)
+            loss = diff.get_loss(model, batch[0].unsqueeze(0), t,device=device)
             print(" Epoch ", epoch,"Loss: ", loss," Step: ", step)
             loss.backward()
             optimizer.step()
@@ -87,5 +90,5 @@ def load_model(model_path=save_path, device=device):
     model.eval()  # Set the model to evaluation mode
     print(f"Model loaded from {model_path}")
     return model, optimizer
-
 run_Diff_model()
+#get_single_input()

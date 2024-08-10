@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
 
-BATCH_SIZE = 1
+BATCH_SIZE = 4
 IMG_SIZE = 128
 
 def read_file_to_list(file_path):
@@ -114,11 +114,12 @@ def get_and_load_dataset(img_dir = "./data/1_parameter/results"):
         # Create datasets
         train_dataset = NumpyDatasetFromFileList(train_file_list, file_dir=img_dir)
         test_dataset = NumpyDatasetFromFileList(test_file_list, file_dir=img_dir)
-
+        train_loader= DataLoader(train_dataset,batch_size=BATCH_SIZE,shuffle=True, drop_last=True)
+        test_loader = DataLoader(test_dataset,batch_size=BATCH_SIZE,shuffle=True, drop_last=True)
         combined_dataset = ConcatDataset([train_dataset, test_dataset])
         loader = DataLoader(combined_dataset, batch_size=BATCH_SIZE, shuffle=True, drop_last=True)
         print(f"Combined dataset: {len(combined_dataset)}")
-        return combined_dataset, loader
+        return combined_dataset, train_loader, test_loader
 
 def move_batch_to_gpu(batch):
     if torch.cuda.is_available():
@@ -151,7 +152,7 @@ def plot(case:torch.tensor = torch.randn(6, 128, 128)):
     # Convert to NumPy array
     if case.ndim == 4 and case.size(0) > 1:
         print("The tensor is a batch of images with more than one element.")
-        for s in range(0,5):
+        for s in range(0,BATCH_SIZE):
             d = case[s].squeeze(0)
             np_array = d.numpy()
             plot_tensor_channels(np_array, cmap='viridis')

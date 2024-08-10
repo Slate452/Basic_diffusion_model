@@ -48,8 +48,8 @@ sqrt_alphas_cumprod = torch.sqrt(alphas_cumprod)
 sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - alphas_cumprod)
 posterior_variance = betas * (1. - alphas_cumprod_prev) / (1. - alphas_cumprod)
 
-def get_loss(model, x_0, t):
-    x_noisy, noise = forward_diffusion(x_0, t)
+def get_loss(model, x_0, t,device):
+    x_noisy, noise = forward_diffusion(x_0, t,device=device)
     noise_pred = model(x_noisy, t)
     l =F.l1_loss(noise, noise_pred)
     l.requires_grad_()
