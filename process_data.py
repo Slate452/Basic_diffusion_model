@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
 
-BATCH_SIZE = 1
+BATCH_SIZE = 5
 IMG_SIZE = 128
 
 def read_file_to_list(file_path):
@@ -118,7 +118,7 @@ def get_and_load_dataset(img_dir = "./data/1_parameter/results"):
         test_loader = DataLoader(test_dataset,batch_size=BATCH_SIZE,shuffle=True, drop_last=True)
         combined_dataset = ConcatDataset([train_dataset, test_dataset])
         loader = DataLoader(combined_dataset, batch_size=BATCH_SIZE, shuffle=True, drop_last=True)
-        print(f"Combined dataset: {len(combined_dataset)}")
+        print(f"train dataset: {len(train_dataset)}")
         return combined_dataset, train_loader, test_loader
 
 
