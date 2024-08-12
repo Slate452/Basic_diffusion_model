@@ -86,7 +86,7 @@ def sample_plot_image(model,device):
     img_size = 128
     img = torch.randn((1, 6, img_size, img_size), device=device)
     model.to(device)
-    num_images = 3
+    num_images = 50
     stepsize = int(T/num_images)
 
     for i in range(0,T)[::-1]:
@@ -94,9 +94,10 @@ def sample_plot_image(model,device):
         img = sample_timestep(img, t, model=model)
         # Edit: This is to maintain the natural range of the distribution
         img = torch.clamp(img, -1.0, 1.0)
-        plot(img)
-        #print(img.shape)
-        #if i % stepsize == 0:
+        if i % stepsize == 0:
+            x_t = img.detach()
+            plot(x_t)
+        #   print(img.shape)
            
 
 def guided_sampling(x,t,model):
