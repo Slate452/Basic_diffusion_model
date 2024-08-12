@@ -125,8 +125,11 @@ def get_and_load_dataset(img_dir = "./data/1_parameter/results"):
 def plot_tensor_channels(tensor, cmap='viridis'):
     num_channels = tensor.shape[0]
     fig, axes = plt.subplots(1, num_channels, figsize=(15, 15))
-
-    channel_names = ["vel","pressure", "so", "on", "so2", "on2"]
+    '''
+    The Shape(Omega), angle of attack and Reynolds number for a snapshot are encoded in the first 3 channel.
+    The Angle of attack(Alpha) and  Reynolds numberb(Re) are 
+    '''
+    channel_names = ["Uf.cos_alpha","Uf.cos_alpha","Omega","Pressure", "Ux", "Uy"]
     
     if num_channels == 1:
         axes = [axes]  

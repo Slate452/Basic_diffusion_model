@@ -32,8 +32,6 @@ def get_single_input():
     #prep.plot(i)
     return i, t
 
-
-
 def time_embeding()-> None:
     img,t = get_single_input()
     enc = unet.PositionalEncoding(embedding_dim=256, max_len=1000)
@@ -41,20 +39,12 @@ def time_embeding()-> None:
     t_enc = enc(t)
     embeder(img,t_enc,r =True)
     
-
-
-def test_attention() ->None:
-    #Test Multihead Attention and Transfromer Implimentation
-    Done=False
-
-
 def Run_net()-> None:
     #Test unet 
     inputs, t = get_single_input()
     model = unet.build_unet()
     y = model(inputs,t)
     prep.plot(y)
-
 
 @torch.no_grad()
 def run_Diff_model() :
@@ -77,10 +67,6 @@ def run_Diff_model() :
                     }, save_path)
                 print(f"Model saved to {save_path}")
 
-        
-
-
-
 def load_model(model_path=save_path, device=device):
     model = unet.build_unet().to(device)  # Rebuild the model and move it to the appropriate device
     optimizer = Adam(model.parameters(), lr=0.001)  # Recreate the optimizer
@@ -93,3 +79,14 @@ def load_model(model_path=save_path, device=device):
     model.eval()  # Set the model to evaluation mode
     print(f"Model loaded from {model_path}")
     return model, optimizer
+
+def test_sample(device = device):
+    Done = False
+    model, optimizer = load_model()
+    diff.sample_plot_image(model,device)
+
+    #smaple timestep
+    #print 1 sample 
+
+
+test_sample()

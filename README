@@ -10,19 +10,18 @@
 2. Added Plot function For visualization
 3. Added Compressed datasets for use on colab
 
+12/08/2024
+1. Added GPU trainig support 
+2. Reduced unet depth and parameters
 
-
-
-
-
-TO DO
-1. create dataset extraction function
-2. Move everything to cuda
 
 
 
 ONGOING
-1. Running Tests on SAMPLING OpenFOAM data
-2. notebook and test processes on Colab GPUs 
+1. Sample and get uncertainty predictions  
+2. Compare with Qiang Liu et all
+3. Implement Sample guidance
+4. Compare with none Guided Models 
+
 
 
