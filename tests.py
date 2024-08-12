@@ -87,6 +87,3 @@ def test_sample(device = device):
 
     #smaple timestep
     #print 1 sample 
-
-
-test_sample()
