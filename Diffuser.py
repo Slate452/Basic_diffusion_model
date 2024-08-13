@@ -50,7 +50,7 @@ posterior_variance = betas * (1. - alphas_cumprod_prev) / (1. - alphas_cumprod)
 
 def get_loss(model, x_0, t,device):
     x_noisy, noise = forward_diffusion(x_0, t,device=device)
-    plot(x_noisy)
+    #plot(x_noisy)
     noise_pred = model(x_noisy, t)
     l =F.l1_loss(noise, noise_pred)
     l.requires_grad_()

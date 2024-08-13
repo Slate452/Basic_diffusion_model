@@ -46,7 +46,7 @@ def Run_net()-> None:
     y = model(inputs,t)
     prep.plot(y)
 
-@torch.no_grad()
+
 def run_Diff_model() :
     for epoch in range(epochs):
         for step, batch in enumerate(data_loader):
@@ -86,4 +86,4 @@ def test_sample(device = device):
     diff.sample_plot_image(model,device)
 
     #smaple timestep
-    #print 1 sample 
+    #print 1 sample ]
