@@ -80,7 +80,7 @@ def sample_timestep(x,  t, model):
         noise = torch.randn_like(x)
         return model_mean + torch.sqrt(posterior_variance_t) * noise 
 
-
+@torch.no_grad
 def sample_plot_image(model,device):
     # Sample noise
     img_size = 128
