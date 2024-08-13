@@ -22,8 +22,6 @@ model = unet.build_unet()
 model.to(device)       
 optimizer = Adam(model.parameters(), lr=0.001)
 epochs = 100 # Try more!
-
-
 def get_single_input():
     i = data[0].unsqueeze(0)
     i.to(device)
@@ -83,6 +81,7 @@ def load_model(model_path=save_path, device=device):
 def test_sample(device = device):
     Done = False
     model, optimizer = load_model()
+    optimizer.zero_grad()
     diff.sample_plot_image(model,device)
 
     #smaple timestep
